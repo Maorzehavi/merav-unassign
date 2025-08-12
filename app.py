@@ -37,7 +37,6 @@ def webhook():
     if 'challenge' in data:
         return jsonify({'challenge': data['challenge']})
 
-    # assign column can come via query (?assign_column=col_x) or body {"assign_column":"col_x"}
     assign_column_id = request.args.get("assign_column") or data.get("assign_column")
     if not assign_column_id:
         return jsonify({"error": "Missing assign_column"}), 400
@@ -48,17 +47,13 @@ def webhook():
     board_id = event.get("boardId")
     value    = event.get("value")
 
-    # Monday may send 'value' as a JSON string; try to parse if so
     if isinstance(value, str):
-        try:
-            value = json.loads(value)
-        except Exception:
-            pass
+        try: value = json.loads(value)
+        except Exception: pass
 
     if not (user_id and item_id and board_id):
         return jsonify({"status": "ignored", "reason": "missing ids"})
 
-    # Assign if value present, unassign if empty
     column_value = {"personsAndTeams": []} if is_empty(value) else {
         "personsAndTeams": [{"id": user_id, "kind": "person"}]
     }
@@ -81,6 +76,4 @@ def webhook():
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
 
-if __name__ == '__main__':
-    # 0.0.0.0 for Docker; publish with -p 5000:5000
-    app.run(host="0.0.0.0", port=5000, debug=True)
+# No __main__ block; Gunicorn imports app:app
